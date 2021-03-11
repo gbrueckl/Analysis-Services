@@ -18,6 +18,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         private Tom.Table _tomTable;
         private string _partitionsDefinition;
         private string _dataSourceName;
+        private ColumnCollection _columns = new ColumnCollection();
         private RelationshipCollection _relationships = new RelationshipCollection();
         private MeasureCollection _measures = new MeasureCollection();
         private bool _isCalculationGroup;
@@ -29,7 +30,8 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         /// </summary>
         /// <param name="parentTabularModel">TabularModel object that the Table object belongs to.</param>
         /// <param name="tomTable">Tabular Object Model Table object abtstracted by the Table class.</param>
-        public Table(TabularModel parentTabularModel, Tom.Table tomTable) : base(tomTable)
+        public Table(TabularModel parentTabularModel, Tom.Table tomTable) 
+            : base(tomTable, parentTabularModel.Model.Name)
         {
             _parentTabularModel = parentTabularModel;
             _tomTable = tomTable;
@@ -51,6 +53,11 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         /// Name of the DataSource object that the Table object belongs to.
         /// </summary>
         public string DataSourceName => _dataSourceName;
+
+        /// <summary>
+        /// Collection of columns for the Table object.
+        /// </summary>
+        public ColumnCollection Columns => _columns;
 
         /// <summary>
         /// Collection of relationships for the Table object.
@@ -145,6 +152,12 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                 {
                     base.RemovePropertyFromObjectDefinition("partitions");
                 }
+            }
+
+            //Find columns
+            foreach (Tom.Column column in _tomTable.Columns)
+            {
+                _columns.Add(new Column(this, column));
             }
 
             //Find table relationships
@@ -267,6 +280,58 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         #endregion
 
         #region Update Actions
+
+        // Columns
+
+        /// <summary>
+        /// Delete Column associated with the Table object.
+        /// </summary>
+        /// <param name="name">Name of the Column to be deleted.</param>
+        public void DeleteColumn(string name)
+        {
+            if (_tomTable.Columns.ContainsName(name))
+            {
+                _tomTable.Columns.Remove(name);
+            }
+
+            // shell model
+            if (_columns.ContainsName(name))
+            {
+                _columns.RemoveByName(name);
+            }
+        }
+
+        /// <summary>
+        /// Create Column associated with the Table object.
+        /// </summary>
+        /// <param name="tomColumnSource">Tabular Object Model Column object from the source tabular model to be abstracted in the target.</param>
+        public void CreateColumn(Tom.Column tomColumnSource)
+        {
+            if (_tomTable.Columns.ContainsName(tomColumnSource.Name))
+            {
+                _tomTable.Columns.Remove(tomColumnSource.Name);
+            }
+
+            Tom.Column tomColumnTarget = tomColumnSource.Clone();
+            tomColumnSource.CopyTo(tomColumnTarget);
+            _tomTable.Columns.Add(tomColumnTarget);
+
+            // shell model
+            _columns.Add(new Column(this, tomColumnTarget));
+        }
+
+        /// <summary>
+        /// Update Column associated with the Table object.
+        /// </summary>
+        /// <param name="tomColumnSource">Tabular Object Model Column object from the source tabular model to be abstracted in the target.</param>
+        public void UpdateColumn(Tom.Column tomColumnSource)
+        {
+            if (_columns.ContainsName(tomColumnSource.Name))
+            {
+                DeleteColumn(tomColumnSource.Name);
+            }
+            CreateColumn(tomColumnSource);
+        }
 
         // Relationships
 
@@ -554,7 +619,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         /// <returns>True if the object is found, or False if it's not found.</returns>
         public bool ColumnsContainsNameCaseInsensitive(string columnName)
         {
-            foreach (Column column in _tomTable.Columns)
+            foreach (Column column in _columns)
             {
                 if (column.Name.ToUpper() == columnName.ToUpper())
                 {

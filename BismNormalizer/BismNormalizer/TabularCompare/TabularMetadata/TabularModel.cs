@@ -625,6 +625,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                 }
             }
 
+            tomTableTarget.Columns.Clear();  //Columns will be added separately later
             tomTableTarget.Measures.Clear();  //Measures will be added separately later
             tomTableTarget.CalculationGroup?.CalculationItems.Clear();  //Calculation items will be added separately later
 
@@ -641,6 +642,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         {
             bool canRetainPartitions = CanRetainPartitions(tableSource, tableTarget, out retainPartitionsMessage);
             Tom.Table tomTableTargetOrig = tableTarget.TomTable.Clone();
+            Table tableTargetOrig = tableTarget;
             ModeType tableTargetModeType = tableTarget.TableModeType;
             List<SingleColumnRelationship> tomRelationshipsToAddBack = DeleteTable(tableTarget.Name);
             CreateTable(tableSource);
@@ -651,6 +653,12 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
             //retain partitions if possible
             if (canRetainPartitions)
                 RetainPartitions(tableTarget, tomTableTargetOrig, out retainPartitionsMessage);
+
+            //add back columns
+            foreach (Tom.Column tomColumnToAddBack in tomTableTargetOrig.Columns)
+            {
+                tableTarget.CreateColumn(tomColumnToAddBack);
+            }
 
             //add back deleted relationships where possible
             foreach (SingleColumnRelationship tomRelationshipToAddBack in tomRelationshipsToAddBack)
@@ -968,7 +976,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
 
             foreach (Table table in _tables)
             {
-                foreach (Column column in table.TomTable.Columns)
+                foreach (Tom.Column column in table.TomTable.Columns)
                 {
                     List<string> variationsToRemove = new List<string>();
 
@@ -1065,7 +1073,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                 bool foundViolation = false;
                 string warningMessage = "";
 
-                foreach (Column column in table.TomTable.Columns)
+                foreach (Tom.Column column in table.TomTable.Columns)
                 {
                     if (!foundViolation)
                     {
@@ -1179,7 +1187,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                                 if (endTable != null)
                                 {
                                     bool endTableContainsAggs = false;
-                                    foreach (Column col in endTable.TomTable.Columns)
+                                    foreach (Tom.Column col in endTable.TomTable.Columns)
                                     {
                                         if (col.AlternateOf != null)
                                         {
@@ -1204,7 +1212,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                             /* Rule 3: Chained aggregations are disallowed
                              */
 
-                            foreach (Column detailColumn in detailTable.TomTable.Columns)
+                            foreach (Tom.Column detailColumn in detailTable.TomTable.Columns)
                             {
                                 if (detailColumn.AlternateOf != null)
                                 {
@@ -1222,7 +1230,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                 {
                     _parentComparison.OnValidationMessage(new ValidationMessageEventArgs(warningMessage, ValidationMessageType.AggregationDependency, ValidationMessageStatus.Warning));
 
-                    foreach (Column column in table.TomTable.Columns)
+                    foreach (Tom.Column column in table.TomTable.Columns)
                     {
                         if (column.AlternateOf != null)
                         {
@@ -1449,7 +1457,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                     //Columns
                     foreach (PerspectiveColumn perspectiveColumnSource in perspectiveTableSource.PerspectiveColumns)
                     {
-                        Column column = tableTarget.TomTable.Columns.Find(perspectiveColumnSource.Name);
+                        Tom.Column column = tableTarget.TomTable.Columns.Find(perspectiveColumnSource.Name);
                         if (column != null)
                         {
                             //Following line is returning null in CTP3.3, when it shouldn't, so having to iterate to find
@@ -1635,13 +1643,13 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                             }
                             break;
                         case ObjectType.Column:
-                            Column columnSource = (Column)namedObjectSource;
+                            Tom.Column columnSource = (Tom.Column)namedObjectSource;
                             foreach (Tom.Table tableTarget in tomCultureTarget.Model.Tables)
                             {
                                 bool foundColumn = false;
                                 if (columnSource.Table?.Name == tableTarget.Name)
                                 {
-                                    foreach (Column columnTarget in tableTarget.Columns)
+                                    foreach (Tom.Column columnTarget in tableTarget.Columns)
                                     {
                                         if (columnSource.Name == columnTarget.Name)
                                         {

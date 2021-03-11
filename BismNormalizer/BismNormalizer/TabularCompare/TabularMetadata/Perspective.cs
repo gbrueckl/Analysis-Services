@@ -17,7 +17,8 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         /// </summary>
         /// <param name="parentTabularModel">TabularModel object that the perspective belongs to.</param>
         /// <param name="tomPerspective">Tabular Object Model Perspective object abtstracted by the Perspective class.</param>
-        public Perspective(TabularModel parentTabularModel, Tom.Perspective tomPerspective): base(tomPerspective)
+        public Perspective(TabularModel parentTabularModel, Tom.Perspective tomPerspective)
+            : base(tomPerspective, parentTabularModel.Model.Name)
         {
             _parentTabularModel = parentTabularModel;
             _tomPerspective = tomPerspective;

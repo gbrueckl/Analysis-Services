@@ -318,7 +318,9 @@ namespace BismNormalizer.TabularCompare.Core
 
         private void RefreshSkipSelectionsFromChildComparisonObjects(ComparisonObject comparisonObject)
         {
-            if (comparisonObject.Status != ComparisonObjectStatus.SameDefinition && comparisonObject.MergeAction == MergeAction.Skip && !_comparisonInfo.SkipSelections.Contains(comparisonObject))
+            if (comparisonObject.Status != ComparisonObjectStatus.SameDefinition 
+                && comparisonObject.MergeAction == MergeAction.Skip 
+                && !_comparisonInfo.SkipSelections.Contains(comparisonObject))
             {
                 _comparisonInfo.SkipSelections.Add(new SkipSelection(comparisonObject));
             }
@@ -346,7 +348,12 @@ namespace BismNormalizer.TabularCompare.Core
             {
                 foreach (SkipSelection skipSelection in _comparisonInfo.SkipSelections)
                 {
-                    if (comparisonObject.Status == skipSelection.Status && comparisonObject.ComparisonObjectType == skipSelection.ComparisonObjectType && (skipSelection.Status == ComparisonObjectStatus.MissingInSource || comparisonObject.SourceObjectInternalName == skipSelection.SourceObjectInternalName) && (skipSelection.Status == ComparisonObjectStatus.MissingInTarget || comparisonObject.TargetObjectInternalName == skipSelection.TargetObjectInternalName))
+                    if (comparisonObject.Status == skipSelection.Status
+                        && comparisonObject.ComparisonObjectType == skipSelection.ComparisonObjectType
+                        && (skipSelection.Status == ComparisonObjectStatus.MissingInSource
+                            || comparisonObject.SourceObjectInternalName == skipSelection.SourceObjectInternalName)
+                        && (skipSelection.Status == ComparisonObjectStatus.MissingInTarget
+                            || comparisonObject.TargetObjectInternalName == skipSelection.TargetObjectInternalName))
                     {
                         comparisonObject.MergeAction = MergeAction.Skip;
                         break;

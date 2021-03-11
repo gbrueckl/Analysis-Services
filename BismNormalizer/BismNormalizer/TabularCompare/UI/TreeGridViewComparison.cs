@@ -86,6 +86,9 @@ namespace BismNormalizer.TabularCompare.UI
                 case "Relationship":
                     returnObjType = ComparisonObjectType.Relationship;
                     break;
+                case "Column":
+                    returnObjType = ComparisonObjectType.Column;
+                    break;
                 case "Measure":
                     returnObjType = ComparisonObjectType.Measure;
                     break;
@@ -251,6 +254,10 @@ namespace BismNormalizer.TabularCompare.UI
                 case ComparisonObjectType.Relationship:
                     node.ImageIndex = 2;
                     node.Cells[0].Value = (isMdMetadata ? treeIndentLevel3 : treeIndentLevel2) + "Relationship";
+                    break;
+                case ComparisonObjectType.Column:
+                    node.ImageIndex = 27;
+                    node.Cells[0].Value = (isMdMetadata ? treeIndentLevel3 : treeIndentLevel2) + "Column";
                     break;
                 case ComparisonObjectType.Measure:
                     node.ImageIndex = 3;

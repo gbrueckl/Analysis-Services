@@ -136,6 +136,10 @@ namespace BismNormalizer.TabularCompare.UI
                     particularTypeNode = FindOrCreateTypeNode(topLevelNodeForHandle, "Relationships");
                     particularTypeNode.ImageIndex = 2;
                     break;
+                case ValidationMessageType.Column:
+                    particularTypeNode = FindOrCreateTypeNode(topLevelNodeForHandle, "Columns");
+                    particularTypeNode.ImageIndex = 27;
+                    break;
                 case ValidationMessageType.Measure:
                     particularTypeNode = FindOrCreateTypeNode(topLevelNodeForHandle, "Measures");
                     particularTypeNode.ImageIndex = 3;

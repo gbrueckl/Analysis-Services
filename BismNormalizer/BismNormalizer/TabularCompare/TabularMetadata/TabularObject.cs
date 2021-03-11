@@ -16,14 +16,17 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
     {
         private string _objectDefinition;
         private string _name;
+        private string _parentName;
 
         /// <summary>
         /// Initializes a new instance of the TabularObject class.
         /// </summary>
         /// <param name="namedMetaDataObject">The Tabular Object Model supertype of the class being abstracted.</param>
-        public TabularObject(NamedMetadataObject namedMetaDataObject)
+        public TabularObject(NamedMetadataObject namedMetaDataObject, string parentName = null)
         {
             _name = namedMetaDataObject.Name;
+            _parentName = parentName;
+
             if (namedMetaDataObject is Tom.Model) return; //Model has custom JSON string
             
             //Serialize json
@@ -159,7 +162,12 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
         /// <summary>
         /// The internal name of the tabular object. Gets overriden by Relationship to store the true name from TOM (GUID form).
         /// </summary>
-        public virtual string InternalName => _name; 
+        public virtual string InternalName => _name;
+
+        /// <summary>
+        /// The name of the parent tabular object. Gets overriden by Relationship to store the true name from TOM (GUID form).
+        /// </summary>
+        public virtual string ParentName => _parentName;
 
     }
 }

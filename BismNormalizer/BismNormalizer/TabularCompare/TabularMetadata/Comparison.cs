@@ -155,6 +155,18 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                     _comparisonObjects.Add(comparisonObjectTable);
                     _comparisonObjectCount += 1;
 
+                    #region Columns for Table that is Missing in Target
+
+                    foreach (Column ColumnSource in tblSource.Columns)
+                    {
+                        ComparisonObjectType comparisonObjectType = ComparisonObjectType.Column;
+                        ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.MissingInTarget, ColumnSource, null, MergeAction.Create);
+                        comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                        _comparisonObjectCount += 1;
+                    }
+
+                    #endregion
+
                     #region Relationships for table Missing in Target
 
                     // all relationships in source are not in target (the target table doesn't even exist)
@@ -210,6 +222,54 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                         _comparisonObjects.Add(comparisonObjectTable);
                         _comparisonObjectCount += 1;
                     }
+                    
+
+                    #region Columns (table in source and target)
+
+                    // see if matching Column in source and target
+                    foreach (Column columnSource in tblSource.Columns)
+                    {
+                        ComparisonObjectType comparisonObjectType = ComparisonObjectType.Column;
+
+                        if (tblTarget.Columns.ContainsName(columnSource.Name))
+                        {
+                            //Column in source and target, so check definition
+                            Column columnTarget = tblTarget.Columns.FindByName(columnSource.Name);
+                            if (columnSource.ObjectDefinition == columnTarget.ObjectDefinition)
+                            {
+                                //Column has same definition
+                                ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.SameDefinition, columnSource, columnTarget, MergeAction.Skip);
+                                comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                                _comparisonObjectCount += 1;
+                            }
+                            else
+                            {
+                                //Column has different definition
+                                ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.DifferentDefinitions, columnSource, columnTarget, MergeAction.Update);
+                                comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                                _comparisonObjectCount += 1;
+                            }
+                        }
+                        else
+                        {
+                            ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.MissingInTarget, columnSource, null, MergeAction.Create);
+                            comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                            _comparisonObjectCount += 1;
+                        }
+                    }
+                    //now check if target contains Columns Missing in Source
+                    foreach (Column columnTarget in tblTarget.Columns)
+                    {
+                        ComparisonObjectType comparisonObjectType =ComparisonObjectType.Column;
+                        if (!tblSource.Columns.ContainsName(columnTarget.Name))
+                        {
+                            ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.MissingInSource, null, columnTarget, MergeAction.Delete);
+                            comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                            _comparisonObjectCount += 1;
+                        }
+                    }
+
+                    #endregion
 
                     #region Relationships source/target tables exist
 
@@ -362,6 +422,30 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                     ComparisonObject comparisonObjectTable = new ComparisonObject(ComparisonObjectType.Table, ComparisonObjectStatus.MissingInSource, null, tblTarget, MergeAction.Delete);
                     _comparisonObjects.Add(comparisonObjectTable);
                     _comparisonObjectCount += 1;
+
+                    #region Columns for Table that is Missing in Source
+
+                    foreach (Column ColumnTarget in tblTarget.Columns)
+                    {
+                        ComparisonObjectType comparisonObjectType = ComparisonObjectType.Column;
+                        ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.MissingInSource, null, ColumnTarget, MergeAction.Delete);
+                        comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                        _comparisonObjectCount += 1;
+                    }
+
+                    #endregion
+
+                    #region Measures for Table that is Missing in Source
+
+                    foreach (Column ColumnTarget in tblTarget.Columns)
+                    {
+                        ComparisonObjectType comparisonObjectType = ComparisonObjectType.Column;
+                        ComparisonObject comparisonObjectColumn = new ComparisonObject(comparisonObjectType, ComparisonObjectStatus.MissingInSource, null, ColumnTarget, MergeAction.Delete);
+                        comparisonObjectTable.ChildComparisonObjects.Add(comparisonObjectColumn);
+                        _comparisonObjectCount += 1;
+                    }
+
+                    #endregion
 
                     #region Relationships for table Missing in Source
 
@@ -675,7 +759,7 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
               Gets pretty hairy.
             */
 
-            _targetTabularModel.BackupAffectedObjects();
+                    _targetTabularModel.BackupAffectedObjects();
 
             #endregion
 
@@ -744,6 +828,43 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
             foreach (ComparisonObject comparisonObject in _comparisonObjects)
             {
                 UpdateTable(comparisonObject);
+            }
+
+            #endregion
+
+            #region Columns
+
+            foreach (ComparisonObject comparisonObject in _comparisonObjects)
+            {
+                if (comparisonObject.ComparisonObjectType == ComparisonObjectType.Table)
+                {
+                    foreach (ComparisonObject childComparisonObject in comparisonObject.ChildComparisonObjects)
+                    {
+                        DeleteColumn(childComparisonObject);                                    //Column
+                    }
+                }
+            }
+
+            foreach (ComparisonObject comparisonObject in _comparisonObjects)
+            {
+                if (comparisonObject.ComparisonObjectType == ComparisonObjectType.Table)
+                {
+                    foreach (ComparisonObject childComparisonObject in comparisonObject.ChildComparisonObjects)
+                    {
+                        CreateColumn(childComparisonObject, comparisonObject.SourceObjectName); //Column, Table
+                    }
+                }
+            }
+
+            foreach (ComparisonObject comparisonObject in _comparisonObjects)
+            {
+                if (comparisonObject.ComparisonObjectType == ComparisonObjectType.Table)
+                {
+                    foreach (ComparisonObject childComparisonObject in comparisonObject.ChildComparisonObjects)
+                    {
+                        UpdateColumn(childComparisonObject, comparisonObject.SourceObjectName); //Column, Table
+                    }
+                }
             }
 
             #endregion
@@ -1649,7 +1770,8 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                         if (!tableSource.IsCalculationGroup && !isCalcTable && !DesktopHardened(comparisonObject, ValidationMessageType.Table))
                         {
                             return;
-                        };
+                        }
+
                         _targetTabularModel.UpdateTable(tableSource, tableTarget, out string retainPartitionsMessage);
                         OnValidationMessage(new ValidationMessageEventArgs($"Update {(tableSource.IsCalculationGroup ? "calculation group" : "table")} '{comparisonObject.TargetObjectName}'. {retainPartitionsMessage}", ValidationMessageType.Table, ValidationMessageStatus.Informational));
                     }
@@ -1743,6 +1865,77 @@ namespace BismNormalizer.TabularCompare.TabularMetadata
                 {
                     OnValidationMessage(new ValidationMessageEventArgs(warningMessage, ValidationMessageType.Relationship, ValidationMessageStatus.Warning));
                 }
+            }
+        }
+
+        #endregion
+
+        #region Columns
+
+        private void DeleteColumn(ComparisonObject comparisonObject)
+        {
+            if ((comparisonObject.ComparisonObjectType == ComparisonObjectType.Column) &&
+                    comparisonObject.MergeAction == MergeAction.Delete)
+            {
+                foreach (Table tableTarget in _targetTabularModel.Tables)
+                {
+                    Column columnTarget = tableTarget.Columns.FindByName(comparisonObject.TargetObjectInternalName);
+
+                    if (columnTarget != null)
+                    {
+                        // Measure may have already been deleted if parent table was deleted
+                        tableTarget.DeleteColumn(comparisonObject.TargetObjectInternalName);
+                        break;
+                    }
+                }
+
+                OnValidationMessage(new ValidationMessageEventArgs($"Delete column '{comparisonObject.TargetObject.ParentName}'[{comparisonObject.TargetObjectInternalName}].", ValidationMessageType.Column, ValidationMessageStatus.Informational));
+            }
+        }
+
+        private void CreateColumn(ComparisonObject comparisonObject, string tableName)
+        {
+            if ((comparisonObject.ComparisonObjectType == ComparisonObjectType.Column) &&
+                    comparisonObject.MergeAction == MergeAction.Create)
+            {
+                foreach (Table tableInTarget in _targetTabularModel.Tables)
+                {
+                    Column columnInTarget = tableInTarget.Columns.FindByName(comparisonObject.SourceObjectInternalName);
+
+                    if (columnInTarget != null)
+                    {
+                        OnValidationMessage(new ValidationMessageEventArgs($"Unable to create column '{comparisonObject.SourceObject.ParentName}'[{comparisonObject.SourceObjectInternalName}] because name already exists in target model.", ValidationMessageType.Column, ValidationMessageStatus.Warning));
+                        return;
+                    }
+                }
+
+                Table tableSource = _sourceTabularModel.Tables.FindByName(tableName);
+                Table tableTarget = _targetTabularModel.Tables.FindByName(tableName);
+
+                if (tableTarget == null)
+                {
+                    OnValidationMessage(new ValidationMessageEventArgs($"Unable to create column '{comparisonObject.SourceObject.ParentName}'[{comparisonObject.SourceObjectInternalName}] because (considering changes) target table does not exist.", ValidationMessageType.Column, ValidationMessageStatus.Warning));
+                    return;
+                }
+
+                //If we get here, can create measure/kpi
+                Column columnSource = tableSource.Columns.FindByName(comparisonObject.SourceObjectInternalName);
+                tableTarget.CreateColumn(columnSource.TomColumn);
+                OnValidationMessage(new ValidationMessageEventArgs($"Create column '{comparisonObject.SourceObject.ParentName}'[{comparisonObject.SourceObjectInternalName}].", ValidationMessageType.Column, ValidationMessageStatus.Informational));
+            }
+        }
+
+        private void UpdateColumn(ComparisonObject comparisonObject, string tableName)
+        {
+            if ((comparisonObject.ComparisonObjectType == ComparisonObjectType.Column) &&
+                    comparisonObject.MergeAction == MergeAction.Update)
+            {
+                Table tableSource = _sourceTabularModel.Tables.FindByName(tableName);
+                Table tableTarget = _targetTabularModel.Tables.FindByName(tableName);
+                Column measureColumn = tableSource.Columns.FindByName(comparisonObject.SourceObjectInternalName);
+
+                tableTarget.UpdateColumn(measureColumn.TomColumn);
+                OnValidationMessage(new ValidationMessageEventArgs($"Update column '{comparisonObject.SourceObject.ParentName}'[{comparisonObject.SourceObjectInternalName}].", ValidationMessageType.Column, ValidationMessageStatus.Informational));
             }
         }
 
